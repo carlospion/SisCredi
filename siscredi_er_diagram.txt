@@ -1,0 +1,898 @@
+================================================================================
+                        SISCREDI - DIAGRAMA ER Y ESTRUCTURA DE BASE DE DATOS
+================================================================================
+
+CONVENCIONES:
+- PK = Primary Key
+- FK = Foreign Key
+- UQ = Unique
+- NN = Not Null
+- DF = Default Value
+
+================================================================================
+                                   DIAGRAMA ER
+================================================================================
+
+                           ┌─────────────────────┐
+                           │  usuarios_primarios │
+                           │ (PADRE - ABSTRACT)  │
+                           └──────────┬──────────┘
+                                     │ (1:1)
+                       ┌─────────────┼─────────────┐
+                       │             │             │
+              ┌────────▼────────┐    │   ┌─────────▼──────────┐
+              │usuarios_primarios│   │   │usuarios_primarios │
+              │     _fisicos     │   │   │     _juridicos    │
+              └──────────────────┘   │   └────────────────────┘
+                                     │
+                                     │ (1:N)
+                           ┌─────────▼──────────┐
+                           │usuarios_secundarios│
+                           └────────────────────┘
+                                     │
+                                     │ 
+                                     │
+                           ┌─────────▼──────────┐
+                           │     clientes       │
+                           │ (PADRE - ABSTRACT) │
+                           └──────────┬─────────┘
+                                     │ (1:1)
+                       ┌─────────────┼─────────────┐
+                       │             │             │
+              ┌────────▼────────┐   │   ┌─────────▼──────────┐
+              │  clientes_      │   │   │    clientes_       │
+              │   fisicos       │   │   │   juridicos        │
+              └─────────────────┘   │   └────────────────────┘
+                                   │
+                     ┌─────────────┼─────────────┐
+                     │             │             │
+              ┌──────▼──────┐     │      ┌──────▼──────┐
+              │datos_laborales│    │      │  clientes_  │
+              │  _ingresos    │    │      │ referencias │
+              └───────────────┘    │      └─────────────┘
+                                  │
+                           ┌──────▼──────┐
+                           │  prestamos  │
+                           └──────┬──────┘
+                                 │
+                    ┌────────────┼────────────┐
+                    │            │            │
+            ┌───────▼───────┐   │    ┌───────▼───────┐
+            │  codeudores_  │   │    │    garantias   │
+            │   garantes    │   │    │ (PADRE-ABSTR.) │
+            └───────────────┘   │    └───────┬───────┘
+                               │            │ (1:1)
+                               │   ┌────────┼────────┐
+                               │   │        │        │
+                               │ ┌─▼──────┐ │ ┌──────▼─┐
+                               │ │garantias│ │ │garantias│
+                               │ │inmobilia│ │ │mobilia │
+                               │ │  rias   │ │ │  rias  │
+                               │ └─────────┘ │ └────────┘
+                               │            │
+                               │     ┌──────▼─────────┐
+                               │     │   garantias_   │
+                               │     │  prendarias    │
+                               │     └────────────────┘
+                               │
+                    ┌──────────┼──────────┐
+                    │          │          │
+            ┌───────▼───────┐ │  ┌───────▼───────┐
+            │gastos_legales_│ │  │     pagos     │
+            │    cierre     │ │  └───────────────┘
+            └───────────────┘ │
+                              │
+                              │            
+            ┌───────┼─────────┼─────────┐
+            │       │         │         │
+        ┌───▼───┐ ┌─▼─────┐  │  ┌──────▼──────┐
+        │notarios│ │testigos│  │  │    ...      │
+        └────────┘ └────────┘  │  └─────────────┘
+
+================================================================================
+                                ESTRUCTURA DE TABLAS
+================================================================================
+
+1. TABLA: usuarios_primarios
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+id                                             PK, NN, 
+cedula_rnc                VARCHAR(11)          UQ, NN
+nombres                   VARCHAR(100)         NN
+telefono                  VARCHAR(20)          NN
+email                     VARCHAR(255)         UQ, NN
+direccion                 TEXT                 NN
+provincia                 VARCHAR(100)         NN
+municipio                 VARCHAR(100)         NN
+fecha_registro            TIMESTAMP            NN, DF(now())
+fecha_ultimo_acceso       TIMESTAMP            NULL
+is_active                 BOOLEAN              NN, DF(true)
+plan_suscripcion          VARCHAR(20)          NN, DF('FREE')
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id), NULL
+password_hash             VARCHAR(255)         NN
+
+
+CHECKS:
+- chk_plan_suscripcion IN ('FREE' y 'PREMIUM')
+================================================================================
+
+2. TABLA: usuarios_primarios_fisicos
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+id                                             PK, FK(usuarios_primarios.id)
+cedula                    VARCHAR(11)          UQ, NN
+nombre                    VARCHAR(100)         NN
+estado_civil              VARCHAR(20)          NULL
+telefono                  VARCHAR(20)          NN
+email                     VARCHAR(255)         UQ, NN
+direccion                 TEXT                 NN
+provincia                 VARCHAR(100)         NN
+municipio                 VARCHAR(100)         NN
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+
+
+CHECKS:
+- chk_estado_civil IN ('SOLTERO', 'CASADO', 'DIVORCIADO', 'UNION LIBRE')
+
+================================================================================
+3. TABLA: usuarios_primarios_juridicos
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+id                                             PK, FK(usuarios_primarios.id)
+rnc                       VARCHAR(9)           NN
+nombre_comercial          VARCHAR(200)         NN
+telefono                  VARCHAR(20)          NN
+email                     VARCHAR(255)         UQ, NN
+direccion                 TEXT                 NN
+provincia                 VARCHAR(100)         NN
+municipio                 VARCHAR(100)         NN
+nombre_representante      VARCHAR(200)         NN
+cedula_representante      VARCHAR(20)          NN
+telefono_representante    VARCHAR(20)          NN
+email_representante       VARCHAR(255)         UQ, NN
+direccion_representante   TEXT                 NN
+provincia_representante   VARCHAR(100)         NN
+municipio_representante   VARCHAR(100)         NN
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+
+================================================================================
+4. TABLA: usuarios_secundarios
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+id                                             PK, NN
+nombres                   VARCHAR(100)         NN
+apellidos                 VARCHAR(100)         NN
+email                     VARCHAR(255)         UQ, NN
+fecha_ingreso             DATE                 NN, DF(current_date)
+-- PERMISOS
+puede_aprobar_prestamos   BOOLEAN              NN, DF(true)
+limite_monto_prestamo     DECIMAL(12,2)        NULL
+puede_ver_reportes        BOOLEAN              NN, DF(true)
+puede_exportar_datos      BOOLEAN              NN, DF(false)
+is_active                 BOOLEAN              NN, DF(true)
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id), NN
+password_hash             VARCHAR(255)         NN
+
+================================================================================
+5. TABLA: clientes
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+id                                             PK, NN
+cedula_rnc                VARCHAR(11)          UQ, NN
+nombre                    VARCHAR(100)         NN
+tipo_persona              VARCHAR(10)          NN
+telefono                  VARCHAR(20)          NN
+email                     VARCHAR(255)         NN
+direccion                 TEXT                 NN
+provincia                 VARCHAR(100)         NN
+municipio                 VARCHAR(100)         NN
+-- SCORING Y RIESGO (ML)
+score_crediticio          INTEGER              NULL CHECK (score_crediticio BETWEEN 0 AND 100)
+categoria_riesgo          VARCHAR(10)          NULL
+probabilidad_default      DECIMAL(5,4)         NULL
+fecha_ultimo_analisis     TIMESTAMP            NULL
+-- CONTROL
+fecha_registro            DATE                 NN, DF(current_date)
+estado_cliente            VARCHAR(20)          NN, DF('ACTIVO')
+motivo_inactividad        TEXT                 NULL
+observaciones_generales   TEXT                 NULL
+is_active                 BOOLEAN              NN, DF(true)
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id o usuarios_primarios.id)
+
+
+CHECKS:
+- chk_tipo_persona IN ('FISICA', 'JURIDICA')
+- chk_categoria_riesgo IN ('BAJO', 'MEDIO', 'ALTO', 'CRITICO')
+- chk_estado_cliente IN ('ACTIVO', 'INACTIVO', 'SUSPENDIDO', 'BLOQUEADO')
+
+================================================================================
+
+6. TABLA: clientes_fisicos
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+id                                             PK, FK(clientes.id)
+cedula_pasaporte          VARCHAR(20)          UQ, NN
+nombre                    VARCHAR(100)         NN
+estado_civil              VARCHAR(20)          NULL
+telefono                  VARCHAR(20)          NN
+email                     VARCHAR(255)         UQ, NN
+direccion                 TEXT                 NN
+provincia                 VARCHAR(100)         NN
+municipio                 VARCHAR(100)         NN
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+
+CHECKS:
+
+- chk_estado_civil IN ('SOLTERO', 'CASADO', 'VIUDO', 'UNION_LIBRE')
+
+================================================================================
+
+7. TABLA: clientes_juridicos
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+id                                             PK, FK(clientes.id)
+rnc                       VARCHAR(9)           NN
+nombre_comercial          VARCHAR(200)         NULL
+telefono                  VARCHAR(20)          NN
+email                     VARCHAR(255)         UQ, NN
+direccion                 TEXT                 NN
+provincia                 VARCHAR(100)         NN
+municipio                 VARCHAR(100)         NN
+nombre_representante      VARCHAR(200)         NN
+cedula_representante      VARCHAR(20)          NN
+telefono_representante    VARCHAR(20)          NULL
+email_representante       VARCHAR(255)         UQ, NN
+direccion_representante   TEXT                 NN
+provincia_representante   VARCHAR(100)         NN
+municipio_representante   VARCHAR(100)         NN
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+
+================================================================================
+
+8. TABLA: datos_laborales_ingresos
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+cliente_id                                     FK(clientes.id), NN
+id                                             PK, NN
+empresa_trabajo           VARCHAR(200)         NN
+telefono_trabajo          VARCHAR(20)          NULL
+calidad                   VARCHAR(100)         NN
+cargo_trabajo             VARCHAR(100)         NN
+tipo_ingresos             VARCHAR(20)          NN
+ingresos_mensuales        DECIMAL(12,2)        NN
+direccion_trabajo         TEXT                 NN
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id o usuarios_primarios.id)
+
+CHECKS:
+- chk_calidad IN ('EMPLEADO', 'GERENTE', 'ACCIONISTA', 'INDEPENDIENTE', 'PENSIONADO', 'CONTRATISTA', 'PROPIETARIO' )
+- chk_tipo_ingresos IN ('SALARIO', 'SALARIO Y COMISIONES', 'INGRESOS VARIABLES', 'INDEPENDIENTE', 'PENSION', 'CONTRATO', 'INGRESOS DE LA EMPRESA' )
+
+
+================================================================================
+
+9. TABLA: clientes_referencias
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+cliente_id                                     FK(clientes.id), NN
+id                                             PK, NN
+cedula                    VARCHAR(20)          NULL
+nombre                    VARCHAR(100)         NN
+telefono                  VARCHAR(20)          NN
+email                     VARCHAR(255)         NULL
+direccion                 TEXT                 NULL
+provincia                 VARCHAR(100)         NN
+municipio                 VARCHAR(100)         NN
+tipo_referencia           VARCHAR(20)          NN
+is_active                 BOOLEAN              NN, DF(true)
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                UUID                 FK(usuarios_primarios.id o usuarios_primarios.id)
+
+CHECKS:
+- chk_tipo_referencia IN ( 'CONYUGUE', 'FAMILIAR', 'LABORAL', 'COMERCIAL', 'CONOCIDO')
+
+================================================================================
+10. TABLA: prestamos
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+cliente_id                                     FK(clientes.id), NN
+id                                             PK, NN
+-- MONTOS Y CONDICIONES
+moneda                    VARCHAR(15)          NN, DF('RD$')
+monto_desembolsado        DECIMAL(12,2)        NULL, DF(0)
+tasa_interes_mensual      DECIMAL(5,2)         NN
+modalidad                 VARCHAR(15)          NN, DF('SOBRE_SALDO')
+-- PLAZOS Y FRECUENCIA
+periodicidad              VARCHAR(15)          NN, DF('MENSUAL')
+numero_cuotas             INTEGER              NN
+valor_cuota               DECIMAL(10,2)        NULL
+-- PROPÓSITO Y GARANTÍAS
+tipo_prestamo             VARCHAR(15)          NN, DF('SIN GARANTIA')
+-- FORMALIZACION
+tipo_formalizacion        VARCHAR(15)          NN, DF('SIN GARANTIA')
+-- ESTADOS Y CONTROL
+condicion_prestamo        VARCHAR(20)          NN, DF('SOLICITADO')
+estado_prestamo           VARCHAR(20)          NN, DF('SOLICITADO')
+-- FECHAS
+fecha_desembolso          DATE                 NULL
+-- AUDITORÍA
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                UUID                 FK(usuarios_primarios.id o usuarios_primarios.id)
+
+
+CHECKS:
+- chk_moneda IN ('USD$', 'RD$')
+- chk_modalidad IN ('SIMPLE', 'AMORTIZADO FIJO', 'PAGO UNICO', 'CAPITAL A VENCIMIENTO', 'AMORTIZADO DECRECIENTE', 'CAPITALIZABLE')
+- chk_frecuencia_pago IN ('DIARIA', 'SEMANAL', 'QUINCENAL', 'MENSUAL')
+- chk_tipo_prestamo  IN ('SIN GARANTIA', 'CON GARANTIA')
+- chk_condicion_prestamo  IN ('VIGENTE', 'RETRASO', 'MORA', 'VENCIDO')
+- chk_estado_prestamo  IN ('ACTIVO', 'IRREGULAR', 'REESTRUCTURADO', 'LEGAL')
+- chk_tipo_formalizacion  IN ('PAGARE NOTARIAL', 'SIMPLE DEBO Y PAGO', 'CONTRATO SIMPLE', 'SIN FORMALIZACION')
+
+
+================================================================================
+
+11. TABLA: codeudores_garantes
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+prestamo_id                                    FK(prestamos.id), NN
+id                                             PK, FK(clientes.id)
+id_codeudor                                    PK
+cedula                    VARCHAR(20)          NULL
+nombre                    VARCHAR(100)         NN
+telefono                  VARCHAR(20)          NN
+email                     VARCHAR(255)         NULL
+direccion                 TEXT                 NN
+provincia                 VARCHAR(100)         NN
+municipio                 VARCHAR(100)         NN
+tipo_responsabilidad      VARCHAR(15)          NN
+
+-- CONTROL
+estado                    VARCHAR(20)          NN, DF('ACTIVO')
+fecha_inclusion           DATE                 NN, DF(current_date)
+fecha_exclusion           DATE                 NULL
+motivo_exclusion          TEXT                 NULL
+observaciones             TEXT                 NULL
+is_active                 BOOLEAN              NN, DF(true)
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                UUID                 FK(usuarios_primarios.id o usuarios_primarios.id)
+
+CHECKS:
+- chk_tipo_responsabilidad IN ('CODEUDOR', 'FIADOR', 'FIADOR SOLIDARIO', 'GARANTE')
+- chk_estado IN ('ACTIVO', 'INACTIVO', 'SUSPENDIDO', 'EXCLUIDO')
+
+================================================================================
+12. TABLA: garantias
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+prestamo_id                                    FK(prestamos.id), NN
+id                                             PK, NN
+tipo_garantia             VARCHAR(20)          NN
+identificador_garantia    VARCHAR(20)          NN
+-- VALUACIÓN
+valor_estimado            DECIMAL(15,2)        NN
+valor_avaluo              DECIMAL(15,2)        NULL
+fecha_avaluo              DATE                 NULL
+realizado_por_avaluo      VARCHAR(200)         NULL
+porcentaje_cobertura      DECIMAL(5,2)         NN, (realiza los calculos)
+valor_garantia_efectiva   DECIMAL(15,2)        GENERATED ALWAYS AS (valor_estimado * porcentaje_cobertura / 100)
+-- DOCUMENTACIÓN
+documentos_respaldo       TEXT                 NULL
+Formalizado               VARCHAR(50)          NN
+fecha_inscripcion         DATE                 NULL
+-- PROPIETARIO/TITULAR
+propietario_nombre        VARCHAR(200)         NN
+propietario_cedula        VARCHAR(20)          NN
+propietario_telefono      VARCHAR(20)          NULL
+relacion_con_deudor       VARCHAR(50)          (codeudores_garantes.tipo_responsabilidad)
+-- ESTADO Y CONTROL
+estado_garantia           VARCHAR(20)          NN
+fecha_liberacion          DATE                 NULL
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id o usuarios_primarios.id)
+
+CHECKS:
+- chk_tipo_garantia IN ('INMOBILIARIA', 'MOBILIARIA', 'PRENDARIA', 'FIDUCIARIA')
+- chk_formalizado IN ('SI', 'NO')
+- chk_porcentaje_cobertura BETWEEN 0 AND 100
+- chk_estado_garantia IN ('ACTIVO', 'LIBERADO')
+
+
+================================================================================
+
+13. TABLA: garantias_inmobiliarias
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+prestamo_id                                    FK(prestamos.id), NN
+id                                             PK, FK(garantias.id)
+-- IDENTIFICACIÓN DEL INMUEBLE
+no_matricula              INTEGER              NN
+propietario_nombre        VARCHAR(200)         NN
+propietario_cedula        VARCHAR(20)          NN
+conyugue_nombre           VARCHAR(200)         NULL
+conyugue_cedula           VARCHAR(20)          NULL
+tipo_inmueble             VARCHAR(20)          NULL
+registro_titulo_corresp   VARCHAR(30)          NN
+descripcion_completa      TEXT                 NN
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id o usuarios_primarios.id)
+
+CHECKS:
+- chk_tipo_inmueble IN ('CASA', 'APARTAMENTO', 'LOCAL COMERCIAL', 'OFICINA', 'TERRENO', 'FINCA', 'SOLAR', 'ALMACEN', 'NAVE_INDUSTRIAL')
+- chk_registro_titulo_corresp IN ()
+
+================================================================================
+14. TABLA: garantias_mobiliarias
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+prestamo_id                                    FK(prestamos.id), NN
+id                                             PK, FK(garantias.id)
+-- IDENTIFICACIÓN DEL BIEN
+propietario_nombre        VARCHAR(200)         NN
+propietario_cedula        VARCHAR(20)          NN
+placa                     VARCHAR(50)          NN
+no_matricula              VARCHAR(50)          NN
+no_chasis                 VARCHAR(50)          NN
+tipo                      VARCHAR(50)          NN
+marca                     VARCHAR(100)         NN
+modelo                    VARCHAR(100)         NN
+color                     VARCHAR(50)          NN
+anio                      VARCHAR(50)          NN
+estado                    VARCHAR(50)          NN
+otros_detalles            VARCHAR(100)         NN
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id o usuarios_primarios.id)
+
+CHECKS:
+- chk_tipo IN ('AUTOMIVIL PRIVADO', 'JEEP', 'AUTOBUS', 'CAMIONETA', 'CAMION', 'MOTOCICLETA')
+
+================================================================================
+15. TABLA: garantias_prendarias
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+prestamo_id                                    FK(prestamos.id), NN
+id                                             PK, FK(garantias.id)
+-- IDENTIFICACIÓN DE LA PRENDA
+tipo_prenda               VARCHAR(30)          NN
+categoria_prenda          VARCHAR(50)          NULL
+-- METALES PRECIOSOS
+tipo_metal                VARCHAR(20)          NULL
+pureza_metal              VARCHAR(10)          NULL
+peso_gramos               DECIMAL(8,3)         NULL
+peso_onzas                DECIMAL(8,3)         GENERATED ALWAYS AS (peso_gramos / 28.35)
+-- PIEDRAS PRECIOSAS
+tiene_piedras             BOOLEAN              NN, DF(false)
+tipo_piedras              TEXT                 NULL
+numero_piedras            INTEGER              NULL
+quilates_totales          DECIMAL(8,3)         NULL
+-- JOYAS Y DETALLES
+tipo_joya                 VARCHAR(30)          NULL
+estilo_diseno             VARCHAR(50)          NULL
+marca_joyeria             VARCHAR(100)         NULL
+fecha_fabricacion         DATE                 NULL
+pais_origen               VARCHAR(100)         NULL
+-- CERTIFICACIONES
+tiene_certificado        BOOLEAN              NN, DF(false)
+numero_certificado       VARCHAR(100)         NULL
+entidad_certificadora    VARCHAR(200)         NULL
+fecha_certificacion      DATE                 NULL
+-- CARACTERÍSTICAS FÍSICAS
+dimensiones              VARCHAR(100)         NULL
+descripcion_detallada    TEXT                 NN
+estado_conservacion      VARCHAR(20)          NN
+necesita_reparacion      BOOLEAN              NN, DF(false)
+costo_reparacion_est     DECIMAL(10,2)        NULL
+-- IDENTIFICACIÓN ÚNICA
+numero_grabado           VARCHAR(100)         NULL
+marcas_distintivas       TEXT                 NULL
+fotografia_adjunta       TEXT                 NULL
+-- VALUACIÓN ESPECIALIZADA
+avaluo_especializado     DECIMAL(15,2)        NULL
+fecha_avaluo_esp         DATE                 NULL
+avaluador_certificado    VARCHAR(200)         NULL
+numero_avaluador         VARCHAR(50)          NULL
+-- PRECIO DE MERCADO
+precio_mercado_actual    DECIMAL(15,2)        NULL
+fecha_precio_mercado     DATE                 NULL
+-- CUSTODIA Y SEGURIDAD
+lugar_custodia           TEXT                 NN
+responsable_custodia     VARCHAR(200)         NN
+telefono_responsable     VARCHAR(20)          NULL
+tiene_seguro_custodia    BOOLEAN              NN, DF(false)
+valor_seguro_custodia    DECIMAL(15,2)        NULL
+-- CONDICIONES DE LIBERACIÓN
+condiciones_especiales   TEXT                 NULL
+requiere_verificacion_exp BOOLEAN             NN, DF(true)
+created_at               TIMESTAMP            NN, DF(now())
+updated_at               TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id o usuarios_primarios.id)
+
+CHECKS:
+- chk_tipo_prenda IN ('ANILLO', 'CADENA', 'PULSERA', 'ARETE', 'RELOJ', 'MEDALLA', 'LINGOTE', 'MONEDA', 'OTRO')
+- chk_tipo_metal IN ('ORO', 'PLATA', 'PLATINO', 'PALADIO', 'MIXTO', 'OTRO')
+- chk_pureza_metal IN ('24K', '22K', '18K', '14K', '10K', '925', '950', 'OTRO')
+- chk_estado_conservacion IN ('EXCELENTE', 'BUENO', 'REGULAR', 'MALO')
+- chk_peso_gramos > 0
+- chk_numero_piedras >= 0
+- chk_quilates_totales >= 0
+
+================================================================================
+
+16. TABLA: gastos_legales_cierre
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+prestamo_id                                    FK(prestamos.id), NN
+id                                             PK, NN
+monto_gastos
+tipo_gasto                VARCHAR(30)          NN
+incluido                  VARCHAR(200)         NN
+descripcion_detallada     TEXT                 NULL
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id o usuarios_primarios.id)
+
+CHECKS:
+- chk_tipo_gasto IN ('NOTARIAL', 'REGISTRO_PUBLICO', 'AVALUO', 'LEGAL', 'ADMINISTRATIVO', 'IMPUESTOS', 'SEGUROS', 'OTRO')
+- chk_incluido  IN ('SI', 'NO')
+- chk_monto_estimado >= 0
+
+================================================================================
+17. TABLA: pagos
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+prestamo_id                                    FK(prestamos.id), NN
+id                                             PK, NN
+numero_recibo             VARCHAR(30)          UQ, NN
+numero_cuota              INTEGER              NULL
+-- MONTOS DEL PAGO
+monto_cuota_pago          DECIMAL(10,2)        NN
+monto_capital             DECIMAL(10,2)        NN, DF(0)
+monto_interes             DECIMAL(10,2)        NN, DF(0)
+monto_retraso             DECIMAL(10,2)        NN, DF(0)
+monto_mora                DECIMAL(10,2)        NN, DF(0)
+-- FECHAS
+fecha_pago                DATE                 NN, DF(current_date)
+fecha_promesa_cuota       DATE                 NULL
+hora_pago                 TIME                 NN, DF(current_time)
+-- INFORMACIÓN DEL PAGO
+metodo_pago               VARCHAR(20)          NN
+-- CUOTA RELACIONADA
+es_pago_anticipado        BOOLEAN              NN
+es_pago_parcial           BOOLEAN              NN
+es_pago_extra             BOOLEAN              NN
+aplicado_a_cuotas         TEXT                 NULL
+-- CÁLCULOS AUTOMÁTICOS
+dias_atraso               INTEGER              NULL
+cargos_por_dia            DECIMAL(8,4)         NULL
+mora_aplicada             DECIMAL(10,2)        NULL
+-- BALANCES DESPUÉS DEL PAGO
+saldo_capital_anterior    DECIMAL(12,2)        NULL
+saldo_capital_posterior   DECIMAL(12,2)        NULL
+saldo_interes_anterior    DECIMAL(12,2)        NULL
+saldo_interes_posterior   DECIMAL(12,2)        NULL
+-- ESTADO Y CONTROL
+estado_pago               VARCHAR(20)          NN
+comentarios_aplicacion    TEXT                 NULL
+recibido_por                                   FK(usuarios_secundarios.id), NN
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id o usuarios_primarios.id)
+
+CHECKS:
+- chk_metodo_pago IN ('EFECTIVO', 'CHEQUE', 'TRANSFERENCIA', 'DEPOSITO', 'PAGO_MOVIL', 'OTRO')
+- chk_estado_pago IN ('PENDIENTE', 'APLICADO', 'PARCIAL')
+
+================================================================================
+
+18. TABLA: notarios
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+prestamo_id                                    FK(prestamos.id), NN
+id                                             PK, NN
+-- DATOS DEL NOTARIO
+nombre                    VARCHAR(200)         NN
+cedula                    VARCHAR(20)          UQ, NN
+no_matricula              VARCHAR(50)          UQ, NN
+direccion                 VARCHAR(20)          NN
+provincia                 VARCHAR(20)          NN
+municipio                 VARCHAR(20)          NN
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id o usuarios_primarios.id)
+
+================================================================================
+19. TABLA: testigos
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+usuario_primario_id                            FK(usuarios_primarios.id), NN
+usuario_secundario_id                          FK(usuarios_primarios.id)
+prestamo_id                                    FK(prestamos.id), NN
+id                                             PK, NN
+-- DATOS PERSONALES
+nombre                    VARCHAR(200)         NN
+cedula                    VARCHAR(20)          UQ, NN
+no_matricula              VARCHAR(50)          UQ, NN
+direccion                 VARCHAR(20)          NN
+provincia                 VARCHAR(20)          NN
+municipio                 VARCHAR(20)          NN
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                                     FK(usuarios_primarios.id o usuarios_primarios.id)
+
+================================================================================
+20. TABLA ADICIONAL: notificaciones
+================================================================================
+Columna                    Tipo                 Restricciones
+--------------------------------------------------------------------------------
+id                        UUID                 PK, NN, DF(uuid4)
+tenant_id                 UUID                 FK(usuarios_primarios.tenant_id), NN
+cliente_id                UUID                 FK(clientes.id), NULL
+prestamo_id               UUID                 FK(prestamos.id), NULL
+pago_id                   UUID                 FK(pagos.id), NULL
+-- CLASIFICACIÓN
+tipo_notificacion         VARCHAR(30)          NN
+categoria                 VARCHAR(20)          NN
+prioridad                 VARCHAR(10)          NN, DF('MEDIA')
+-- DESTINATARIO
+destinatario_tipo         VARCHAR(20)          NN
+destinatario_nombre       VARCHAR(200)         NN
+destinatario_telefono     VARCHAR(20)          NULL
+destinatario_email        VARCHAR(255)         NULL
+-- CANAL DE ENVÍO
+canal_envio               VARCHAR(15)          NN
+proveedor_servicio        VARCHAR(50)          NULL
+-- CONTENIDO
+asunto                    VARCHAR(300)         NN
+mensaje_corto             TEXT                 NN
+mensaje_completo          TEXT                 NULL
+variables_personalizacion JSON                NULL
+-- PROGRAMACIÓN
+fecha_programada          TIMESTAMP            NN
+fecha_envio               TIMESTAMP            NULL
+fecha_entrega             TIMESTAMP            NULL
+fecha_lectura             TIMESTAMP            NULL
+-- INTENTOS Y ESTADO
+numero_intentos           INTEGER              NN, DF(0)
+max_intentos              INTEGER              NN, DF(3)
+estado_envio              VARCHAR(20)          NN, DF('PENDIENTE')
+codigo_respuesta          VARCHAR(10)          NULL
+mensaje_error             TEXT                 NULL
+-- SEGUIMIENTO
+requiere_confirmacion     BOOLEAN              NN, DF(false)
+confirmado_por_destinatario BOOLEAN            NULL
+fecha_confirmacion        TIMESTAMP            NULL
+-- COSTOS
+costo_envio               DECIMAL(6,4)         NULL
+proveedor_costo           VARCHAR(50)          NULL
+-- AUTOMATIZACIÓN
+es_automatica             BOOLEAN              NN, DF(true)
+disparador_evento         VARCHAR(50)          NULL
+regla_negocio_aplicada    VARCHAR(100)         NULL
+-- PLANTILLA
+plantilla_utilizada       VARCHAR(100)         NULL
+version_plantilla         VARCHAR(20)          NULL
+-- RESPUESTA DEL DESTINATARIO
+respuesta_recibida        TEXT                 NULL
+fecha_respuesta           TIMESTAMP            NULL
+canal_respuesta           VARCHAR(15)          NULL
+-- MÉTRICAS
+tiempo_entrega_segundos   INTEGER              GENERATED ALWAYS AS (EXTRACT(EPOCH FROM (fecha_entrega - fecha_envio)))
+tiempo_lectura_segundos   INTEGER              GENERATED ALWAYS AS (EXTRACT(EPOCH FROM (fecha_lectura - fecha_entrega)))
+-- AUDITORÍA
+enviado_por               UUID                 FK(usuarios_secundarios.id), NULL
+created_at                TIMESTAMP            NN, DF(now())
+updated_at                TIMESTAMP            NN, DF(now())
+created_by                UUID                 FK(usuarios_secundarios.id), NN
+
+ÍNDICES:
+- idx_notificaciones_tenant ON (tenant_id)
+- idx_notificaciones_cliente ON (cliente_id)
+- idx_notificaciones_prestamo ON (prestamo_id)
+- idx_notificaciones_tipo ON (tipo_notificacion)
+- idx_notificaciones_estado ON (estado_envio)
+- idx_notificaciones_fecha_prog ON (fecha_programada)
+- idx_notificaciones_canal ON (canal_envio)
+- idx_notificaciones_prioridad ON (prioridad)
+
+CHECKS:
+- chk_tipo_notificacion IN ('PRESTAMO_APROBADO', 'PRESTAMO_RECHAZADO', 'DESEMBOLSO_REALIZADO', 'PAGO_RECIBIDO', 'CUOTA_VENCIDA', 'RECORDATORIO_PAGO', 'MORA_APLICADA', 'PRESTAMO_CANCELADO', 'CAMBIO_CONDICIONES', 'OTRO')
+- chk_categoria IN ('INFORMATIVA', 'RECORDATORIO', 'ALERTA', 'URGENTE', 'PROMOCIONAL')
+- chk_prioridad IN ('BAJA', 'MEDIA', 'ALTA', 'CRITICA')
+- chk_destinatario_tipo IN ('CLIENTE', 'CODEUDOR', 'REFERENCIA', 'USUARIO_PRIMARIO', 'USUARIO_SECUNDARIO')
+- chk_canal_envio IN ('EMAIL', 'SMS', 'WHATSAPP', 'LLAMADA', 'PUSH', 'POSTAL')
+- chk_estado_envio IN ('PENDIENTE', 'ENVIADO', 'ENTREGADO', 'LEIDO', 'ERROR', 'CANCELADO', 'EXPIRADO')
+- chk_numero_intentos <= max_intentos
+- chk_max_intentos BETWEEN 1 AND 10
+
+================================================================================
+                                RELACIONES PRINCIPALES
+================================================================================
+
+RELACIONES PADRE-HIJO (Herencia):
+1. usuarios_primarios -> usuarios_primarios_fisicos (1:1)
+2. usuarios_primarios -> usuarios_primarios_juridicos (1:1)
+3. clientes -> clientes_fisicos (1:1)
+4. clientes -> clientes_juridicos (1:1)
+5. garantias -> garantias_inmobiliarias (1:1)
+6. garantias -> garantias_mobiliarias (1:1)
+7. garantias -> garantias_prendarias (1:1)
+
+RELACIONES PRINCIPALES:
+1. usuarios_primarios (1) -> usuarios_secundarios (N)
+2. usuarios_primarios (1) -> clientes (N)
+3. clientes (1) -> datos_laborales_ingresos (1)
+4. clientes (1) -> clientes_referencias (N)
+5. clientes (1) -> prestamos (N)
+6. prestamos (1) -> codeudores_garantes (N)
+7. prestamos (1) -> garantias (N)
+8. prestamos (1) -> gastos_legales_cierre (N)
+9. prestamos (1) -> pagos (N)
+10. prestamos (1) -> notarios (N)
+11. prestamos (1) -> testigos (N)
+12. prestamos (1) -> notificaciones (N)
+13. gastos_legales_cierre (1) -> notarios (N)
+14. gastos_legales_cierre (1) -> testigos (N)
+15. notarios (1) -> testigos (N)
+
+RELACIONES DE AUDITORÍA:
+- Todas las tablas tienen created_by (FK a usuarios_secundarios o usuarios_primarios)
+
+================================================================================
+                                ÍNDICES COMPUESTOS ADICIONALES
+================================================================================
+
+-- Optimización para consultas multi-tenant
+CREATE INDEX idx_prestamos_tenant_cliente ON prestamos(tenant_id, cliente_id);
+CREATE INDEX idx_pagos_tenant_prestamo ON pagos(tenant_id, prestamo_id);
+CREATE INDEX idx_garantias_tenant_prestamo ON garantias(tenant_id, prestamo_id);
+
+-- Optimización para búsquedas de cobranza
+CREATE INDEX idx_prestamos_estado_vencimiento ON prestamos(estado_prestamo, fecha_vencimiento_final);
+CREATE INDEX idx_prestamos_mora ON prestamos(dias_mora_actual, estado_cobranza);
+
+-- Optimización para reportes
+CREATE INDEX idx_pagos_fecha_metodo ON pagos(fecha_pago, metodo_pago);
+CREATE INDEX idx_prestamos_fecha_monto ON prestamos(fecha_desembolso, monto_aprobado);
+
+-- Optimización para notificaciones
+CREATE INDEX idx_notificaciones_fecha_estado ON notificaciones(fecha_programada, estado_envio);
+
+================================================================================
+                                TRIGGERS SUGERIDOS
+================================================================================
+
+TRIGGERS PARA MANTENER INTEGRIDAD:
+1. trg_validar_suma_pagos - Validar que suma de conceptos = monto total
+2. trg_actualizar_saldos_prestamo - Actualizar saldos después de cada pago
+3. trg_calcular_mora - Calcular mora automáticamente
+4. trg_generar_codigo_cliente - Generar código único de cliente
+5. trg_generar_numero_prestamo - Generar número único de préstamo
+6. trg_actualizar_score_ml - Disparar recálculo de ML después de pagos
+7. trg_notificar_eventos - Crear notificaciones automáticas
+
+FUNCIONES ALMACENADAS SUGERIDAS:
+1. fn_calcular_cuota(monto, tasa, plazo, metodo)
+2. fn_calcular_tabla_amortizacion(prestamo_id)
+3. fn_aplicar_pago(pago_id)
+4. fn_calcular_mora(prestamo_id, fecha_calculo)
+5. fn_generar_estado_cuenta(prestamo_id, fecha_desde, fecha_hasta)
+
+================================================================================
+                                VISTAS RECOMENDADAS
+================================================================================
+
+VIEW vw_cartera_activa - Resumen de préstamos activos por usuario
+VIEW vw_pagos_vencidos - Préstamos con pagos vencidos
+VIEW vw_dashboard_cobranza - Métricas de cobranza en tiempo real
+VIEW vw_clientes_completos - Clientes con toda su información consolidada
+VIEW vw_prestamos_garantias - Préstamos con sus garantías valoradas
+VIEW vw_notificaciones_pendientes - Notificaciones por enviar
+
+================================================================================
+                                PARTICIONADO (Futuro)
+================================================================================
+
+Para mejorar performance con grandes volúmenes:
+- Particionar tabla 'pagos' por fecha_pago (mensual)
+- Particionar tabla 'notificaciones' por fecha_programada (mensual)
+- Particionar tabla 'prestamos' por fecha_solicitud (anual)
+
+================================================================================
+                                BACKUP Y ARCHIVADO
+================================================================================
+
+ESTRATEGIA DE ARCHIVADO:
+- Mover préstamos pagados > 5 años a tabla histórica
+- Archivar notificaciones > 2 años
+- Conservar datos de ML indefinidamente para entrenamiento
+
+BACKUP:
+- Backup completo diario
+- Backup incremental cada 4 horas
+- Replicación en tiempo real para disaster recovery
+
+================================================================================
+                                SEGURIDAD DE DATOS
+================================================================================
+
+ENCRIPTACIÓN:
+- Campos sensibles: cedula, telefono, email, direccion
+- Algoritmo: AES-256
+- Key rotation: trimestral
+
+ROW LEVEL SECURITY:
+- Políticas por tenant_id
+- Usuarios solo ven sus datos
+- Administradores ven todo (con auditoria)
+
+AUDITORÍA:
+- Log todos los cambios en datos sensibles
+- Retención de logs: 7 años
+- Monitoreo de accesos anómalos
+
+================================================================================

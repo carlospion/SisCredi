@@ -55,17 +55,34 @@ PRD: SisCredi
   - **Cache:** Redis
   - **Task Queue:** Celery con Redis broker
 
+  #### 3.2 Modelado de Datos y estructura de la Base de Datos
+  - Multi-tenancy completo (row-level security)
+  - Jerarquía de usuarios clara (Primario → Secundario)
+  - Modelos financieros robustos (Préstamos, Pagos, Garantías)
+  - Preparación para ML con tablas específicas para scoring
+  - Optimización de BD con índices estratégicos
+  
+  ## estructura de la Base de Datos
+
+  UsuarioPrimario (tabla)
+  id_usuario_principal
+  rnc_cedula
+  nombre
+  telefono
+
+  
+
   #### 3.2 Modelos de Django Principales
   Utiliza de manera proactiva las herramientas por defecto que se encuentran en la libreria/biblioteca de Django para las implementaciones de las funciones principales de la aplicacion web la gestion de las tareas comunes de desarrollo web (para ello te puedes apoyar/ayudar de las documentaciones oficiales de la pagina de Django)
+
+  #### 3.3 Especificaciones de Machine Learning
+  para este proyecto vamos a crear un modelo ML que lo llamaremos 'CILA' con Scikit-learn (ya tienes las mayorias de las librerias y herramientas necesarias instaladas en el proyecto para poder desarrollar completamente al ML, si necesitas alguna otra dependencia para complementar las herramientas de Scikit-learn puedes instalarla de manera proactiva), sera basicamente el pilar fundamental del sistema, ya que nos diferenciara de la competencia por el momento, ya que seremos capaz de implementar la gestion de creditos y cartera con la IA y el ML para los analisis de datos de manera optima e inteligentes.
 
   #### 3.3 APIs y Endpoints
   - APIs REST
   - metodos HTTPs
-  - Seguridad
-  - Documentación
-  - Escalabilidad
-  - Manejo de errores
-  - Versiones
+  - conciliaciones bancarias (banreservas, popular y bhd)
+  - Twilio
 
   4. REQUERIMIENTOS FUNCIONALES
 
@@ -116,7 +133,7 @@ PRD: SisCredi
   - ejecutar todas las operaciones CRUD del sistema
   - siempre estar enlazado al Usuario Principal
 
-  4.5 Epic 5: Manejo del sistema
+  4.6 Epic 6: Manejo del sistema
 
   User Story: Como Cliente de mi Usuario Principal, quiero que se me notifique de la creacion de cada credito otorgado y de ser notificado de cada pago realizado, como tambien tener la opcion de revisar el estatus de mis creditos y de los pagos realizados atraves de Whatsapp.
 
@@ -149,84 +166,11 @@ PRD: SisCredi
 
   6. DISEÑO Y UX
 
-  6.1 Flujos de Usuario Principales
-
-  1. Smart Task Creation
-    - Usuario crea tarea con descripción
-    - AI analiza y sugiere prioridad, tiempo estimado, tags
-    - Usuario confirma o ajusta sugerencias
-    - Sistema aprende de ajustes
-  2. Intelligent Daily Planning
-    - Usuario inicia día
-    - AI presenta plan optimizado basado en calendar, energy levels
-    - Usuario puede reorganizar con drag & drop
-    - Sistema recalcula prioridades dinámicamente
+  6.1 Flujos de Usuario Secundario
 
   7. PLAN DE DESARROLLO
 
   7.1 Fases del Proyecto
 
-  - Fase 1 (MVP): [6 semanas]
-    - CRUD básico de tareas y proyectos
-    - Integración OpenAI para análisis básico
-    - Dashboard simple con métricas
-  - Fase 2: [4 semanas]
-    - ML model personalizado para estimaciones
-    - Sistema de notificaciones inteligentes
-    - Analytics avanzados
-  - Fase 3: [4 semanas]
-    - Colaboración en equipo
-    - Integraciones (Slack, Calendar)
-    - Mobile responsiveness
 
-  8. MÉTRICAS Y KPIs
 
-  8.1 Métricas de AI Performance
-
-  - Accuracy de estimaciones de tiempo (objetivo: >80%)
-  - User satisfaction con recomendaciones (objetivo: >4.5/5)
-  - Reduction en task switching (objetivo: 30% decrease)
-
-  8.2 Métricas de Producto
-
-  - Monthly Active Users (objetivo: 10K en 6 meses)
-  - Average session duration (objetivo: >15 min)
-  - Tasks completed per user per day (objetivo: >8)
-
-  9. INTEGRACIONES AI/MCP
-
-  9.1 MCP Connectors Planeados
-
-  - Calendar integration (Google, Outlook)
-  - Communication tools (Slack, Teams)
-  - Development tools (GitHub, Jira)
-  - Time tracking (Toggl, RescueTime)
-
-  9.2 AI Models Pipeline
-
-  # Ejemplo de pipeline de ML
-  class TaskAnalyzer:
-      def analyze_task(self, task_description):
-          # NLP analysis
-          complexity_score = self.complexity_model.predict(description)
-
-          # Time estimation
-          time_estimate = self.time_model.predict(
-              features=[complexity_score, user_history, task_type]
-          )
-
-          return {
-              'complexity': complexity_score,
-              'estimated_time': time_estimate,
-              'suggested_priority': self.calculate_priority()
-          }
-
-  10. CRITERIOS DE LANZAMIENTO
-
-  10.1 Go/No-Go Criteria
-
-  - AI model accuracy >75% en dataset de prueba
-  - Load testing exitoso (1K concurrent users)
-  - Security audit completado
-  - GDPR compliance verificado
-  - Beta testing con 100 usuarios completado
